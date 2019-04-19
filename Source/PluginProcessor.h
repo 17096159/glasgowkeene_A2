@@ -55,13 +55,25 @@ public:
     void getStateInformation (MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
     
-    //AudioBuffer<float> returnAudioBuffer; //in jon's code, can ignore for now apparently
+    //AudioBuffer<float> returnAudioBuffer;
+    //^^^in jon's code, can ignore for now apparently
+    
+    dsp::Gain<float> gain;
+    float mixLevel;
+    
+    //FOR SMOOTHING THE VALUE SO YOU DON'T GET POPS WHEN YOU RAPIDLY SWING THE SLIDER
+    //DUNNO HOW THO
+    //SmoothedValue<float> mixLevel;
+
 
 private:
     float currentSampleRate;
     float currentAngle;
     float angleDelta; //how much we need to increment
     float sinFreq;
+    
+    //dsp::Gain<float> gain;
+    
     
     void updateAngleDelta();
     Random random;

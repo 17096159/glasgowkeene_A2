@@ -103,6 +103,9 @@ void Glasgowkeene_a2AudioProcessor::prepareToPlay (double sampleRate, int sample
     currentSampleRate = sampleRate;
     sinFreq = 100.0f;
     updateAngleDelta();
+    mixLevel = 0.15f;
+    
+    gain.setGainDecibels(12.0f);
     
     String message;
     message << "Preparing to play..." << newLine;
@@ -163,7 +166,7 @@ void Glasgowkeene_a2AudioProcessor::processBlock (AudioBuffer<float>& buffer, Mi
     // Alternatively, you can process the samples with the channels
     // interleaved by keeping the same state.
     
-    //set up another basket (copy of input buffer) for the wet signal , so we can keep our original
+    //set up another "basket" (copy of input buffer) for the wet signal , so we can keep our original
     AudioBuffer<float> wetBuffer(totalNumInputChannels, buffer.getNumSamples());
     wetBuffer.makeCopyOf(buffer);
     
@@ -183,7 +186,7 @@ void Glasgowkeene_a2AudioProcessor::processBlock (AudioBuffer<float>& buffer, Mi
             
             //calculate value to put into buffer (FOR SINE WAVE GENERATOR G:)
             auto currentSinSample = (float) std::sin(currentAngle);
-            currentAngle += angleDelta; //currentAngle = currentAngle + angleDelta
+            currentAngle += angleDelta; //IS THE SAME AS: currentAngle = currentAngle + angleDelta
             
             //let's make our sine wave wiggle~~~
             modulator = random.nextFloat() * 0.1f - 0.05f;
@@ -193,13 +196,17 @@ void Glasgowkeene_a2AudioProcessor::processBlock (AudioBuffer<float>& buffer, Mi
             auto shapedSample = (float) std::tanh(wetData[sample]);
             wetData[sample] = shapedSample;
             
-            //add original dry signal with processed wet signal into our output buffer (aka input buffer, cause they're the same basket yo)
+            //add original dry signal with processed wet signal into our output buffer (aka input buffer, cause they're the same "basket")
             //*0.5 or whatever variable --> the ratio for wet/dry
-            channelData[sample] = channelData[sample] * 0.6f + wetData[sample] * 0.4f;
+            //4TH APRIL EDIT: added mixLevel. the 0.25f in (0.25f - mixLevel) (or whatever value) is the maximum level you can go
+            channelData[sample] = channelData[sample] * (0.25f - mixLevel) +
+                wetData[sample] * mixLevel;
             
-            //channelData[sample] = random.nextFloat() * 0.25f - 0.125f; //scale first then offset (dunno what this means tho)
+            //channelData[sample] = random.nextFloat() * 0.25f - 0.125f; //scale first then offset (dunno what this means tho tbh)
         }
     }
+    dsp::AudioBlock<float> output(buffer);
+    gain.process(dsp::ProcessContextReplacing<float> (output));
 }
 
 //==============================================================================
