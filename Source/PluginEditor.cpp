@@ -12,8 +12,8 @@
 #include "PluginEditor.h"
 
 //==============================================================================
-Glasgowkeene_a2AudioProcessorEditor::Glasgowkeene_a2AudioProcessorEditor (Glasgowkeene_a2AudioProcessor& p)
-    : AudioProcessorEditor (&p), processor (p)
+Glasgowkeene_a2AudioProcessorEditor::Glasgowkeene_a2AudioProcessorEditor (Glasgowkeene_a2AudioProcessor& p, AudioProcessorValueTreeState& vts)
+    : AudioProcessorEditor (&p), processor (p), valueTreeState(vts)
 {
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
@@ -33,9 +33,11 @@ Glasgowkeene_a2AudioProcessorEditor::Glasgowkeene_a2AudioProcessorEditor (Glasgo
     addAndMakeVisible(mixLabel);
     mixLabel.setText("Wet/Dry", dontSendNotification);
     mixLabel.attachToComponent(&mixSlider, false);
-    mixSlider.addListener(this);
+    //mixSlider.addListener(this);
     
     addAndMakeVisible(mixSlider);
+    //attach the slider to the attachemnt that links our processor param of the same name with this slider
+    mixAttachment.reset(new AudioProcessorValueTreeState::SliderAttachment (valueTreeState, "mix", mixSlider));
     
     /*
     freqSlider.setTextBoxStyle(Slider::TextEntryBoxPosition::TextBoxBelow, true, 80, 12);

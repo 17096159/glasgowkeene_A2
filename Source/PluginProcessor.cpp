@@ -20,9 +20,24 @@ Glasgowkeene_a2AudioProcessor::Glasgowkeene_a2AudioProcessor()
                       #endif
                        .withOutput ("Output", AudioChannelSet::stereo(), true)
                      #endif
-                       )
+                       ), parameters(*this, nullptr, Identifier("RingMod"),  //change "RingMod" to name of your DAW
+                                    {
+                                        //add list of parameters that you think your plugin will have
+                                        std::make_unique<AudioParameterFloat>("mix", //Parameter ID
+                                                                              "Mix", //Parameter Name
+                                                                              0.0f, //minimum value
+                                                                              1.0f, //max value
+                                                                              0.5f //default value
+                                                                              )
+                                       //std::make_unique<AudioParameterFloat>("next parameter (?)))", //Parameter ID
+                                                                         
+                                    }
+                        )
 #endif
 {
+    // store pointer to our parameter
+    mixParameter = parameters.getRawParameterValue("mix");
+    
     currentSampleRate = 0.0f;
     currentAngle = 0.0f;
     angleDelta = 0.0f;
@@ -196,11 +211,13 @@ void Glasgowkeene_a2AudioProcessor::processBlock (AudioBuffer<float>& buffer, Mi
             auto shapedSample = (float) std::tanh(wetData[sample]);
             wetData[sample] = shapedSample;
             
+            auto automatableMixLevel = *mixParameter;
+            
             //add original dry signal with processed wet signal into our output buffer (aka input buffer, cause they're the same "basket")
             //*0.5 or whatever variable --> the ratio for wet/dry
             //4TH APRIL EDIT: added mixLevel. the 0.25f in (0.25f - mixLevel) (or whatever value) is the maximum level you can go
-            channelData[sample] = channelData[sample] * (0.25f - mixLevel) +
-                wetData[sample] * mixLevel;
+            channelData[sample] = channelData[sample] * (1.0f - automatableMixLevel) +
+                wetData[sample] * automatableMixLevel;
             
             //channelData[sample] = random.nextFloat() * 0.25f - 0.125f; //scale first then offset (dunno what this means tho tbh)
         }
@@ -217,7 +234,7 @@ bool Glasgowkeene_a2AudioProcessor::hasEditor() const
 
 AudioProcessorEditor* Glasgowkeene_a2AudioProcessor::createEditor()
 {
-    return new Glasgowkeene_a2AudioProcessorEditor (*this);
+    return new Glasgowkeene_a2AudioProcessorEditor (*this, parameters);
 }
 
 //==============================================================================
@@ -226,12 +243,24 @@ void Glasgowkeene_a2AudioProcessor::getStateInformation (MemoryBlock& destData)
     // You should use this method to store your parameters in the memory block.
     // You could do that either as raw data, or use the XML or ValueTree classes
     // as intermediaries to make it easy to save and load complex data.
+    auto state = parameters.copyState(); //saves valueTree in to "state"
+    std::unique_ptr<XmlElement> xml(state.createXml()); //creates an XML version of "state"
+    copyXmlToBinary(*xml, destData);
 }
 
 void Glasgowkeene_a2AudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
+    std::unique_ptr<XmlElement> xmlState (getXmlFromBinary(data, sizeInBytes));
+    
+    if(xmlState.get() != nullptr)
+    {
+        if (xmlState->hasTagName(parameters.state.getType()))
+        {
+            parameters.replaceState(ValueTree::fromXml(*xmlState));
+        }
+    }
 }
 
 //==============================================================================

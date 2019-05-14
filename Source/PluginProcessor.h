@@ -72,8 +72,11 @@ private:
     float angleDelta; //how much we need to increment
     float sinFreq;
     
-    //dsp::Gain<float> gain;
     
+    float* mixParameter = nullptr;
+    
+    //dsp::Gain<float> gain;
+    AudioProcessorValueTreeState parameters;
     
     void updateAngleDelta();
     Random random;

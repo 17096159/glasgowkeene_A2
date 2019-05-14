@@ -19,7 +19,7 @@
 class Glasgowkeene_a2AudioProcessorEditor  : public AudioProcessorEditor, Slider::Listener
 {
 public:
-    Glasgowkeene_a2AudioProcessorEditor (Glasgowkeene_a2AudioProcessor&);
+    Glasgowkeene_a2AudioProcessorEditor (Glasgowkeene_a2AudioProcessor&, AudioProcessorValueTreeState&);
     ~Glasgowkeene_a2AudioProcessorEditor();
 
     //==============================================================================
@@ -29,13 +29,20 @@ public:
 private:
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
+    
+    
+    
     Slider mixSlider;
+    //creating the attachment to connect my slider to the APVTS
+    std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> mixAttachment;
     Label mixLabel;
     
     Slider freqSlider;
     Label freqLabel;
     
     void sliderValueChanged (Slider* slider) override;
+    
+    AudioProcessorValueTreeState & valueTreeState;
     
     Glasgowkeene_a2AudioProcessor& processor;
 
